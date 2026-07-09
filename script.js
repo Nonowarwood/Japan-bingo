@@ -71,6 +71,7 @@ const scoreEl = document.getElementById("score");
 const progressFillEl = document.getElementById("progress-fill");
 const bingoCountEl = document.getElementById("bingo-count");
 const resetBtn = document.getElementById("reset-btn");
+const editModeBtn = document.getElementById("edit-mode-btn");
 const overlayEl = document.getElementById("bingo-overlay");
 const othersGridEl = document.getElementById("others-grid");
 const toastContainerEl = document.getElementById("toast-container");
@@ -79,6 +80,7 @@ let currentPlayerId = localStorage.getItem(LOCAL_STORAGE_KEY);
 const playersData = {};
 const knownBingoCounts = {};
 let overlayTimeout = null;
+let editMode = false;
 
 function shuffledIndices(n) {
   const arr = Array.from({ length: n }, (_, i) => i);
@@ -94,7 +96,13 @@ function createNewPlayerState() {
     order: shuffledIndices(CRITERIA.length).slice(0, CELL_COUNT),
     checked: Array(CELL_COUNT).fill(false),
     completedLines: [],
+    customTexts: Array(CELL_COUNT).fill(null),
   };
+}
+
+function getCellText(data, pos) {
+  const custom = data.customTexts && data.customTexts[pos];
+  return custom || CRITERIA[data.order[pos]];
 }
 
 function computeCompletedLines(checked) {
@@ -134,18 +142,19 @@ function renderOwnGrid() {
     LINES[lineId].forEach((pos) => winningPositions.add(pos));
   });
 
+  gridEl.classList.toggle("edit-mode", editMode);
   gridEl.innerHTML = "";
   data.order.forEach((criterionIndex, pos) => {
     const cell = document.createElement("div");
     cell.className = "bingo-cell";
-    cell.textContent = CRITERIA[criterionIndex];
+    cell.textContent = getCellText(data, pos);
     cell.setAttribute("role", "button");
     cell.setAttribute("tabindex", "0");
 
     if (data.checked[pos]) cell.classList.add("done");
     if (winningPositions.has(pos)) cell.classList.add("win-line");
 
-    const activate = () => toggleCell(pos);
+    const activate = () => (editMode ? editCellText(pos) : toggleCell(pos));
     cell.addEventListener("click", activate);
     cell.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -216,7 +225,7 @@ function renderOthers() {
       const miniCell = document.createElement("div");
       miniCell.className = "other-mini-cell";
       if (data.checked[pos]) miniCell.classList.add("done");
-      miniCell.title = CRITERIA[criterionIndex];
+      miniCell.title = getCellText(data, pos);
       miniGrid.appendChild(miniCell);
     });
 
@@ -236,6 +245,22 @@ async function toggleCell(pos) {
   checked[pos] = !checked[pos];
   const completedLines = computeCompletedLines(checked);
   await updateDoc(playerDocRef(currentPlayerId), { checked, completedLines });
+}
+
+async function editCellText(pos) {
+  const data = playersData[currentPlayerId];
+  if (!data) return;
+
+  const currentText = getCellText(data, pos);
+  const newText = prompt("Modifier ce critère :", currentText);
+  if (newText === null) return;
+
+  const trimmed = newText.trim();
+  if (!trimmed) return;
+
+  const customTexts = data.customTexts ? [...data.customTexts] : Array(CELL_COUNT).fill(null);
+  customTexts[pos] = trimmed;
+  await updateDoc(playerDocRef(currentPlayerId), { customTexts });
 }
 
 function attachPlayerListener(player) {
@@ -316,6 +341,13 @@ resetBtn.addEventListener("click", async () => {
   const ok = confirm("Réinitialiser ta grille de bingo ?");
   if (!ok) return;
   await setDoc(playerDocRef(currentPlayerId), createNewPlayerState());
+});
+
+editModeBtn.addEventListener("click", () => {
+  editMode = !editMode;
+  editModeBtn.classList.toggle("active", editMode);
+  editModeBtn.textContent = editMode ? "✅ Terminer la modification" : "✏️ Modifier mes cases";
+  renderOwnGrid();
 });
 
 if (currentPlayerId && PLAYERS.some((p) => p.id === currentPlayerId)) {

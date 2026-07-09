@@ -247,7 +247,7 @@ body {
 .app.entering .bingo-cell:nth-child(8) { animation-delay: 0.63s; }
 .app.entering .bingo-cell:nth-child(9) { animation-delay: 0.68s; }
 
-.app.entering .reset-btn {
+.app.entering .grid-actions {
   animation: revealUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both;
 }
 
@@ -406,12 +406,18 @@ body {
   animation: pop 0.45s ease;
 }
 
-/* Reset button */
-.reset-btn {
-  display: block;
-  margin: 20px auto 4px;
-  padding: 11px 24px;
-  font-size: 0.95rem;
+/* Grid action buttons */
+.grid-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 18px 0 4px;
+}
+
+.ghost-btn {
+  padding: 10px 20px;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #fff;
   background: var(--glass-bg);
@@ -420,11 +426,31 @@ body {
   -webkit-backdrop-filter: blur(10px);
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, background 0.2s ease;
 }
 
-.reset-btn:active {
+.ghost-btn:active {
   transform: scale(0.97);
+}
+
+.ghost-btn.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #14101f;
+  border-color: transparent;
+}
+
+/* Mode édition des cases */
+.bingo-grid.edit-mode .bingo-cell {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.bingo-grid.edit-mode .bingo-cell::before {
+  content: "✏️";
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 0.75rem;
 }
 
 /* Bingo overlay */
