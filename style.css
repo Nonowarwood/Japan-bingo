@@ -94,6 +94,10 @@ body {
   filter: blur(10px);
 }
 
+.player-select[hidden] {
+  display: none;
+}
+
 .ps-title {
   margin: 0 0 4px;
   font-size: clamp(1.2rem, 5.5vw, 1.9rem);
