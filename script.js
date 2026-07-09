@@ -225,7 +225,7 @@ function renderOthers() {
       const miniCell = document.createElement("div");
       miniCell.className = "other-mini-cell";
       if (data.checked[pos]) miniCell.classList.add("done");
-      miniCell.title = getCellText(data, pos);
+      miniCell.textContent = getCellText(data, pos);
       miniGrid.appendChild(miniCell);
     });
 

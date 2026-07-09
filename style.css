@@ -548,15 +548,15 @@ body {
 
 .others-grid {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
   margin-top: 10px;
 }
 
 .other-card {
-  flex: 1 1 130px;
-  max-width: 170px;
+  flex: 1 1 170px;
+  max-width: 220px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
@@ -611,17 +611,29 @@ body {
 .other-mini-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
+  gap: 4px;
 }
 
 .other-mini-cell {
   aspect-ratio: 1 / 1;
-  border-radius: 3px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3px;
+  font-size: clamp(0.48rem, 2.3vw, 0.6rem);
+  font-weight: 600;
+  line-height: 1.05;
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
 }
 
 .other-mini-cell.done {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 214, 10, 0.85);
+  color: #1a1330;
+  font-weight: 700;
 }
 
 .other-card-loading {
