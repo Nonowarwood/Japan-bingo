@@ -65,7 +65,6 @@ const playerSelectEl = document.getElementById("player-select");
 const playerButtonsEl = document.getElementById("player-buttons");
 const appEl = document.getElementById("app");
 const playerNameLabelEl = document.getElementById("player-name-label");
-const switchPlayerBtn = document.getElementById("switch-player-btn");
 const gridEl = document.getElementById("bingo-grid");
 const scoreEl = document.getElementById("score");
 const progressFillEl = document.getElementById("progress-fill");
@@ -291,11 +290,6 @@ PLAYERS.forEach((p) => {
     startApp();
   });
   playerButtonsEl.appendChild(btn);
-});
-
-switchPlayerBtn.addEventListener("click", () => {
-  localStorage.removeItem(LOCAL_STORAGE_KEY);
-  location.reload();
 });
 
 resetBtn.addEventListener("click", async () => {
