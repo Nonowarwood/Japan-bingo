@@ -82,6 +82,31 @@ const knownBingoCounts = {};
 let overlayTimeout = null;
 let editMode = false;
 
+// SFX jouées dans l'ordre (1, 2, 3, puis on reboucle) à chaque ligne complétée.
+// Ce sont des fichiers .mp4 audio-only, mais <audio> les lit très bien.
+const bingoSfx = ["sfx1.mp4", "sfx2.mp4", "sfx3.mp4"].map((src) => new Audio(src));
+let bingoSfxIndex = 0;
+
+function unlockBingoSfx() {
+  bingoSfx.forEach((audio) => {
+    audio
+      .play()
+      .then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      })
+      .catch(() => {});
+  });
+}
+document.addEventListener("pointerdown", unlockBingoSfx, { once: true });
+
+function playNextBingoSfx() {
+  const audio = bingoSfx[bingoSfxIndex % bingoSfx.length];
+  bingoSfxIndex++;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
 function shuffledIndices(n) {
   const arr = Array.from({ length: n }, (_, i) => i);
   for (let i = arr.length - 1; i > 0; i--) {
@@ -280,6 +305,7 @@ function attachPlayerListener(player) {
     if (previousCount !== undefined && data.completedLines.length > previousCount) {
       if (player.id === currentPlayerId) {
         showBingoOverlay();
+        playNextBingoSfx();
       } else {
         showToast(`🎉 ${player.name} vient de faire BINGO !`);
       }
