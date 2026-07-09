@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bingo Cosplay - Japan Expo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="bg-decor" aria-hidden="true">
+  <span class="deco d1">✦</span>
+  <span class="deco d2">★</span>
+  <span class="deco d3">⛩</span>
+  <span class="deco d4">✦</span>
+  <span class="deco d5">★</span>
+</div>
+
+<!-- Écran de sélection du joueur -->
+<div id="player-select" class="player-select">
+  <h1 class="ps-title">🎌 BINGO COSPLAY <span class="highlight">JAPAN EXPO</span> 🎌</h1>
+  <p class="ps-subtitle">Qui es-tu ?</p>
+  <div id="player-buttons" class="player-buttons"></div>
+</div>
+
+<!-- Application principale -->
+<div id="app" class="app" hidden>
+
+  <header class="header">
+    <h1>🎌 BINGO <span class="highlight" id="player-name-label"></span> 🎌</h1>
+    <button id="switch-player-btn" class="switch-player-btn">🔁 Changer de joueur</button>
+  </header>
+
+  <main class="app-main">
+
+    <section class="progress-section">
+      <div class="progress-info">
+        <span id="score">0 / 9</span>
+        <span id="bingo-count" class="bingo-count-badge" hidden>0 BINGO 🎉</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </section>
+
+    <div id="bingo-grid" class="bingo-grid"></div>
+
+    <button id="reset-btn" class="reset-btn">🔄 Réinitialiser ma grille</button>
+
+    <section class="others-section">
+      <h2 class="others-title">👀 Progression des autres</h2>
+      <div id="others-grid" class="others-grid"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Fait avec ❤️ pour les otakus de la Japan Expo
+  </footer>
+</div>
+
+<div id="bingo-overlay" class="bingo-overlay" hidden>
+  <div class="bingo-message">
+    <div class="bingo-text">BINGO !</div>
+    <div class="bingo-sub">Ligne complétée 🎊</div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
