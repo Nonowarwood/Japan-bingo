@@ -61,6 +61,7 @@ const LOCAL_STORAGE_KEY = "bingoCurrentPlayerId";
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const bgPhotoEl = document.getElementById("bg-photo");
 const playerSelectEl = document.getElementById("player-select");
 const playerButtonsEl = document.getElementById("player-buttons");
 const appEl = document.getElementById("app");
@@ -263,13 +264,31 @@ function attachPlayerListener(player) {
   });
 }
 
-function startApp() {
-  playerSelectEl.hidden = true;
-  appEl.hidden = false;
+function startApp(animate) {
   const player = PLAYERS.find((p) => p.id === currentPlayerId);
-  document.body.dataset.player = player.id;
-  playerNameLabelEl.textContent = player.name.toUpperCase();
-  PLAYERS.forEach(attachPlayerListener);
+
+  const reveal = () => {
+    document.body.dataset.player = player.id;
+    playerNameLabelEl.textContent = player.name.toUpperCase();
+    playerSelectEl.hidden = true;
+    appEl.hidden = false;
+    bgPhotoEl.classList.add("visible");
+
+    if (animate) {
+      appEl.classList.add("entering");
+      setTimeout(() => appEl.classList.remove("entering"), 1800);
+    }
+
+    PLAYERS.forEach(attachPlayerListener);
+  };
+
+  if (animate) {
+    playerButtonsEl.style.pointerEvents = "none";
+    playerSelectEl.classList.add("leaving");
+    setTimeout(reveal, 450);
+  } else {
+    reveal();
+  }
 }
 
 function showPlayerSelect() {
@@ -285,9 +304,10 @@ PLAYERS.forEach((p) => {
     <span class="player-card-name">${p.name}</span>
   `;
   btn.addEventListener("click", () => {
+    btn.classList.add("picked");
     currentPlayerId = p.id;
     localStorage.setItem(LOCAL_STORAGE_KEY, p.id);
-    startApp();
+    startApp(true);
   });
   playerButtonsEl.appendChild(btn);
 });
@@ -299,7 +319,7 @@ resetBtn.addEventListener("click", async () => {
 });
 
 if (currentPlayerId && PLAYERS.some((p) => p.id === currentPlayerId)) {
-  startApp();
+  startApp(false);
 } else {
   showPlayerSelect();
 }
