@@ -8,32 +8,27 @@
 </head>
 <body>
 
-<div class="bg-decor" aria-hidden="true">
-  <span class="deco d1">✦</span>
-  <span class="deco d2">★</span>
-  <span class="deco d3">⛩</span>
-  <span class="deco d4">✦</span>
-  <span class="deco d5">★</span>
-</div>
+<div id="bg-photo" class="bg-photo" aria-hidden="true"></div>
+<div class="bg-scrim" aria-hidden="true"></div>
 
 <!-- Écran de sélection du joueur -->
 <div id="player-select" class="player-select">
-  <h1 class="ps-title">🎌 BINGO COSPLAY <span class="highlight">JAPAN EXPO</span> 🎌</h1>
-  <p class="ps-subtitle">Qui es-tu ?</p>
-  <div id="player-buttons" class="player-buttons"></div>
+  <h1 class="ps-title">🎌 Bingo Cosplay <span class="highlight">Japan Expo</span></h1>
+  <p class="ps-subtitle">Choisis ton profil</p>
+  <div id="player-buttons" class="player-cards"></div>
 </div>
 
 <!-- Application principale -->
 <div id="app" class="app" hidden>
 
-  <header class="header">
-    <h1>🎌 BINGO <span class="highlight" id="player-name-label"></span> 🎌</h1>
-    <button id="switch-player-btn" class="switch-player-btn">🔁 Changer de joueur</button>
+  <header class="topbar">
+    <span id="player-name-label" class="player-chip"></span>
+    <button id="switch-player-btn" class="switch-player-btn" title="Changer de joueur">🔁</button>
   </header>
 
   <main class="app-main">
 
-    <section class="progress-section">
+    <section class="stat-panel">
       <div class="progress-info">
         <span id="score">0 / 9</span>
         <span id="bingo-count" class="bingo-count-badge" hidden>0 BINGO 🎉</span>
@@ -47,16 +42,12 @@
 
     <button id="reset-btn" class="reset-btn">🔄 Réinitialiser ma grille</button>
 
-    <section class="others-section">
-      <h2 class="others-title">👀 Progression des autres</h2>
+    <details class="others-section">
+      <summary class="others-summary">👀 Progression des autres</summary>
       <div id="others-grid" class="others-grid"></div>
-    </section>
+    </details>
 
   </main>
-
-  <footer class="footer">
-    Fait avec ❤️ pour les otakus de la Japan Expo
-  </footer>
 </div>
 
 <div id="bingo-overlay" class="bingo-overlay" hidden>

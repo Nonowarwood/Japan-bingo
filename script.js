@@ -51,9 +51,9 @@ const LINES = [
 ];
 
 const PLAYERS = [
-  { id: "mateo", name: "Matéo" },
-  { id: "robin", name: "Robin" },
-  { id: "noah", name: "Noah" },
+  { id: "mateo", name: "Matéo", image: "2.jpeg" },
+  { id: "robin", name: "Robin", image: "1.jpeg" },
+  { id: "noah", name: "Noah", image: "3.jpeg" },
 ];
 
 const LOCAL_STORAGE_KEY = "bingoCurrentPlayerId";
@@ -268,6 +268,7 @@ function startApp() {
   playerSelectEl.hidden = true;
   appEl.hidden = false;
   const player = PLAYERS.find((p) => p.id === currentPlayerId);
+  document.body.dataset.player = player.id;
   playerNameLabelEl.textContent = player.name.toUpperCase();
   PLAYERS.forEach(attachPlayerListener);
 }
@@ -279,8 +280,11 @@ function showPlayerSelect() {
 
 PLAYERS.forEach((p) => {
   const btn = document.createElement("button");
-  btn.className = "player-btn";
-  btn.textContent = `Je suis ${p.name}`;
+  btn.className = "player-card";
+  btn.innerHTML = `
+    <img src="${p.image}" alt="${p.name}">
+    <span class="player-card-name">${p.name}</span>
+  `;
   btn.addEventListener("click", () => {
     currentPlayerId = p.id;
     localStorage.setItem(LOCAL_STORAGE_KEY, p.id);
