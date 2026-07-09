@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — k-shelf.</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f8ef7'/%3E%3Cstop offset='0.5' stop-color='%23a855f7'/%3E%3Cstop offset='1' stop-color='%23e040a0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='38' y='62' text-anchor='middle' fill='%23fff' font-family='Syne,Arial,sans-serif' font-size='46' font-weight='800'%3Ek%3C/text%3E%3Crect x='58' y='30' width='7' height='34' rx='2' fill='%23fff'/%3E%3Crect x='67' y='26' width='7' height='38' rx='2' fill='%23fff' opacity='0.85'/%3E%3Crect x='30' y='70' width='44' height='5' rx='2' fill='%23fff'/%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Syne:wght@700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: #07090e;
+      color: #fff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Halos d'ambiance */
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.45;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .glow-1 { width: 400px; height: 400px; background: #4f8ef7; top: -120px; left: -80px; }
+    .glow-2 { width: 380px; height: 380px; background: #e040a0; bottom: -120px; right: -80px; }
+    .glow-3 { width: 300px; height: 300px; background: #a855f7; top: 40%; left: 55%; }
+
+    .wrap { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+    /* Pochette de l'album 404 */
+    .cover-slot {
+      width: 128px;
+      height: 128px;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 16px 50px rgba(168, 85, 247, 0.3);
+      animation: float 4s ease-in-out infinite;
+    }
+    .cover-placeholder { color: rgba(255,255,255,0.3); }
+    .cover-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      animation: coverFade 0.6s ease both;
+    }
+    .cover-slot.cover-loaded {
+      background: none;
+      border-color: rgba(255,255,255,0.15);
+    }
+    @keyframes coverFade {
+      from { opacity: 0; transform: scale(1.08); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Le gros 404 glitch */
+    .error-code {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(6rem, 24vw, 13rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -4px;
+      background: linear-gradient(135deg, #4f8ef7, #a855f7, #e040a0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      position: relative;
+      animation: float 4s ease-in-out infinite;
+    }
+    /* Effet glitch : deux copies décalées */
+    .error-code::before,
+    .error-code::after {
+      content: "404";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      background: linear-gradient(135deg, #4f8ef7, #a855f7, #e040a0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .error-code::before { animation: glitch1 2.6s infinite steps(2); opacity: 0.7; }
+    .error-code::after  { animation: glitch2 3.2s infinite steps(2); opacity: 0.7; }
+
+    @keyframes glitch1 {
+      0%, 92%, 100% { transform: translate(0,0); clip-path: none; }
+      93% { transform: translate(-4px, 2px); clip-path: inset(20% 0 40% 0); }
+      95% { transform: translate(3px, -1px); clip-path: inset(60% 0 10% 0); }
+      97% { transform: translate(-2px, 1px); clip-path: inset(10% 0 70% 0); }
+    }
+    @keyframes glitch2 {
+      0%, 90%, 100% { transform: translate(0,0); clip-path: none; }
+      91% { transform: translate(4px, -2px); clip-path: inset(50% 0 20% 0); }
+      94% { transform: translate(-3px, 2px); clip-path: inset(15% 0 55% 0); }
+      96% { transform: translate(2px, -1px); clip-path: inset(70% 0 5% 0); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .error-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.4rem, 5vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-top: 4px;
+    }
+    .error-desc {
+      font-size: 0.98rem;
+      color: #9aa0ad;
+      max-width: 440px;
+      line-height: 1.6;
+      margin: 14px 0 4px;
+    }
+
+    /* Clin d'œil KiiiKiii */
+    .kiii-nod {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.82rem;
+      color: #c9a0e8;
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      padding: 10px 18px;
+      border-radius: 100px;
+      margin: 8px 0 24px;
+    }
+
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 13px 22px;
+      border-radius: 100px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-home {
+      background: linear-gradient(135deg, #4f8ef7, #a855f7, #e040a0);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35);
+    }
+    .btn-yt {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    .btn-yt:hover { background: rgba(255,0,0,0.14); border-color: rgba(255,0,0,0.4); }
+    .btn-sp {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    .btn-sp:hover { background: rgba(29,185,84,0.16); border-color: rgba(29,185,84,0.5); }
+
+    .listen-label {
+      font-size: 0.78rem;
+      color: #6b7280;
+      margin: 26px 0 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 480px) {
+      .actions { flex-direction: column; width: 100%; max-width: 300px; }
+      .btn { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="glow glow-3"></div>
+
+  <div class="wrap">
+    <div class="cover-slot" id="cover-slot">
+      <div class="cover-placeholder" id="cover-ph">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+    </div>
+    <div class="error-code">404</div>
+    <h1 class="error-title">page not found.</h1>
+    <p class="error-desc">Cette page a disparu quelque part entre deux étagères. Elle existe sans coordonnées, dans une new era.</p>
+
+    <div class="kiii-nod">// 404 (New Era) — KiiiKiii 키키</div>
+
+    <a href="/K-Shelf/" class="btn btn-home">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Retour à ma collection
+    </a>
+
+    <p class="listen-label">en attendant, écoute 404 ✦</p>
+    <div class="actions">
+      <a href="https://www.youtube.com/watch?v=zhHB4dZTChw" target="_blank" rel="noopener" class="btn btn-yt">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.2 3.6z"/></svg>
+        Clip officiel
+      </a>
+      <a href="https://open.spotify.com/track/24rDDbSlFY9OHrlJb48CRh" target="_blank" rel="noopener" class="btn btn-sp">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.52 17.34c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.38-1.32 9.78-.66 13.5 1.62.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.1 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.32-1.32 11.4-1.02 15.9 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.36z"/></svg>
+        Spotify
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Récupère la pochette de "404" via le proxy Spotify (comme le site)
+    (async function loadCover() {
+      const slot = document.getElementById("cover-slot");
+      const ph = document.getElementById("cover-ph");
+      try {
+        const r = await fetch("https://nonowarwood--954f2bba77a211f19bd91607ee4eb77e.web.val.run/?artist=KiiiKiii&title=" + encodeURIComponent("404 (New Era)"));
+        const data = await r.json();
+        const url = data && data.found && data.images && data.images[0] && data.images[0].url;
+        if (url) {
+          const img = new Image();
+          img.onload = () => {
+            slot.innerHTML = '';
+            img.className = 'cover-img';
+            slot.appendChild(img);
+            slot.classList.add('cover-loaded');
+          };
+          img.src = url;
+        }
+      } catch (e) { /* garde le placeholder disque */ }
+    })();
+  </script>
+</body>
+</html>

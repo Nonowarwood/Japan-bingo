@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>k-shelf.</title>
+  <meta name="description" content="k-shelf — ma collection K-pop virtuelle. Cataloguez vos albums, photocards et concerts, avec vos stats d'écoute et vos badges.">
+  <meta name="theme-color" content="#a855f7">
+
+  <!-- Open Graph (aperçu au partage : Discord, WhatsApp, iMessage…) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="k-shelf.">
+  <meta property="og:description" content="Ma collection K-pop virtuelle — albums, photocards, concerts, stats d'écoute et badges.">
+  <meta property="og:url" content="https://nonowarwood.github.io/K-Shelf/">
+  <meta property="og:image" content="https://nonowarwood.github.io/K-Shelf/Untitled-design.jpeg">
+  <meta property="og:site_name" content="k-shelf.">
+
+  <!-- Twitter/X card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="k-shelf.">
+  <meta name="twitter:description" content="Ma collection K-pop virtuelle — albums, photocards, concerts, stats d'écoute et badges.">
+  <meta name="twitter:image" content="https://nonowarwood.github.io/K-Shelf/Untitled-design.jpeg">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f8ef7'/%3E%3Cstop offset='0.5' stop-color='%23a855f7'/%3E%3Cstop offset='1' stop-color='%23e040a0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='38' y='62' text-anchor='middle' fill='%23fff' font-family='Syne,Arial,sans-serif' font-size='46' font-weight='800'%3Ek%3C/text%3E%3Crect x='58' y='30' width='7' height='34' rx='2' fill='%23fff'/%3E%3Crect x='67' y='26' width='7' height='38' rx='2' fill='%23fff' opacity='0.85'/%3E%3Crect x='30' y='70' width='44' height='5' rx='2' fill='%23fff'/%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,wght@0,300;0,500;0,600;1,400&family=Playfair+Display:wght@500;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ================= K-SHELF LANDING (écran déconnecté) =================
+     À COLLER dans index.html, juste après la balise <body>.
+     Rien d'autre à ajouter : welcome.html embarque déjà three.js + les polices.
+     Assure-toi que welcome.html est bien à la racine du repo (à côté d'index.html).
+====================================================================== -->
+<div id="kl-overlay">
+  <iframe id="kl-frame" src="a.html" title="k-shelf" loading="eager"></iframe>
+</div>
+<style>
+  #kl-overlay{position:fixed;inset:0;z-index:99999;display:none;background:#060608}
+  #kl-frame{width:100%;height:100%;border:0;display:block}
+</style>
+<script>
+(function(){
+  var ov = document.getElementById('kl-overlay');
+  var demo = false, shown = null, ready = false;
+
+  function show(){ if(shown===true)return; shown=true; ov.style.display='block'; document.body.style.overflow='hidden'; }
+  function hide(){ if(shown===false)return; shown=false; ov.style.display='none'; document.body.style.overflow=''; }
+
+  function sync(){
+    if(!ready) return;
+    var user = window._currentUser || null;
+    if(user && demo) demo = false;          // connecté -> on annule le mode démo
+    (!user && !demo) ? show() : hide();     // déconnecté (et pas en démo) -> on montre le landing
+  }
+
+  // Petite période de grâce pour laisser Firebase résoudre la session
+  // (évite un flash du landing pour un utilisateur déjà connecté).
+  setTimeout(function(){ ready = true; sync(); }, 700);
+  setInterval(sync, 300);
+
+  // Messages envoyés par welcome.html (les boutons du landing)
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if(d.source !== 'k-shelf-landing') return;
+    if(d.type === 'signin'){ demo = false; window.signInWithGoogle && window.signInWithGoogle(); }
+    else if(d.type === 'demo'){ demo = true; hide(); window.loadDemoCollection && window.loadDemoCollection(); }
+  });
+
+  // Contrôle manuel si besoin : window.__klanding.show() / .hide()
+  window.__klanding = { show: show, hide: function(){ demo = true; hide(); } };
+})();
+</script>
+<!-- ===================== FIN K-SHELF LANDING ===================== -->
+
+  <!-- ÉCRAN DE CHARGEMENT -->
+  <div id="splash-screen">
+    <div class="splash-logo">
+      <svg viewBox="0 0 100 100" width="88" height="88">
+        <defs>
+          <linearGradient id="splash-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#4f8ef7"/>
+            <stop offset="0.5" stop-color="#a855f7"/>
+            <stop offset="1" stop-color="#e040a0"/>
+          </linearGradient>
+        </defs>
+        <rect width="100" height="100" rx="22" fill="url(#splash-grad)"/>
+        <text x="38" y="62" text-anchor="middle" fill="#fff" font-family="Syne,Arial,sans-serif" font-size="46" font-weight="800">k</text>
+        <rect x="58" y="30" width="7" height="34" rx="2" fill="#fff"/>
+        <rect x="67" y="26" width="7" height="38" rx="2" fill="#fff" opacity="0.85"/>
+        <rect x="30" y="70" width="44" height="5" rx="2" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="splash-wordmark">k-shelf.</div>
+    <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+  </div>
+
+  <!-- AURORA BACKGROUND -->
+  <div class="apple-aurora">
+    <div class="aurora-blob blob-agency"></div>
+    <div class="aurora-blob blob-ambient"></div>
+  </div>
+
+  <!-- BOUTON RECHERCHE MOBILE -->
+  <button class="mobile-search-btn" id="mobile-search-btn" onclick="toggleMobileSearch()">🔍</button>
+  <div class="mobile-search-overlay" id="mobile-search-overlay">
+    <input type="text" id="mobile-search-input" data-i18n-placeholder="sidebar.search" placeholder="rechercher un album, un artiste..." oninput="handleSearch(); document.getElementById('album-search').value=this.value;">
+    <button onclick="toggleMobileSearch()">✕</button>
+  </div>
+
+  <!-- HEADER HORIZONTAL -->
+  <header class="app-header" id="app-header">
+    <div class="header-left">
+      <div class="header-logo" onclick="showHome()">k-shelf.</div>
+      <nav class="header-tabs" id="header-tabs">
+        <button class="header-tab" data-tab="albums" onclick="switchSidebarTab('albums')">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          Albums
+        </button>
+        <button class="header-tab" data-tab="photocards" onclick="switchSidebarTab('photocards')">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="18" height="20" rx="2"/><circle cx="12" cy="9" r="3"/><path d="M7 19c1.5-2.5 8.5-2.5 10 0"/></svg>
+          Photos
+        </button>
+        <button class="header-tab" data-tab="concerts" onclick="switchSidebarTab('concerts')">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          Concerts
+        </button>
+        <button class="header-tab" data-tab="favorites" onclick="switchSidebarTab('favorites')">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 21.593c-.525-.445-4.783-4.144-6.622-5.672-1.839-1.529-3.378-3.538-3.378-6.021 0-2.583 2.099-4.5 4.5-4.5 1.485 0 2.886.699 3.5 1.706.614-1.007 2.015-1.706 3.5-1.706 2.401 0 4.5 1.917 4.5 4.5 0 2.483-1.539 4.492-3.378 6.021-1.839 1.528-6.097 5.227-6.622 5.672z"/></svg>
+          Favoris
+        </button>
+        <button class="header-tab spotify-feature" data-tab="stats" onclick="showStats()">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Stats
+        </button>
+      </nav>
+    </div>
+
+    <div class="header-right">
+      <div class="header-search">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="header-search-input" placeholder="rechercher..." oninput="document.getElementById('album-search').value=this.value; handleSearch();"/>
+      </div>
+
+      <div class="topbar" id="topbar">
+        <div class="profile-dropdown-wrap">
+          <button class="profile-btn" id="profile-btn" onclick="toggleProfileDropdown()">
+            <div class="profile-avatar" id="profile-avatar-btn">
+              <span id="profile-avatar-letter">?</span>
+              <img id="profile-avatar-img" src="" alt="" style="display:none">
+            </div>
+            <span class="profile-name-label" id="profile-name-label">Se connecter</span>
+            <svg class="profile-dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+
+          <!-- DROPDOWN MENU -->
+          <div class="profile-dropdown-menu" id="profile-dropdown-menu">
+        <button class="dropdown-item" onclick="document.getElementById('profile-dropdown-menu').classList.remove('visible'); document.getElementById('profile-modal-overlay').classList.add('visible'); if(window.loadProfileExtraIntoForm) loadProfileExtraIntoForm(); if(window.renderKprofileStats) renderKprofileStats();">
+          <svg class="dropdown-item-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span data-i18n="dropdown.profile">Mon profil</span>
+        </button>
+        <button class="dropdown-item" onclick="document.getElementById('profile-dropdown-menu').classList.remove('visible'); openShareModal();">
+          <svg class="dropdown-item-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>Partage & profil public</span>
+        </button>
+        <button class="dropdown-item" onclick="document.getElementById('profile-dropdown-menu').classList.remove('visible'); openCommunityModal();">
+          <svg class="dropdown-item-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Communauté</span>
+        </button>
+        <button class="dropdown-item" onclick="document.getElementById('profile-dropdown-menu').classList.remove('visible'); document.getElementById('settings-overlay').classList.add('visible'); if(window.updateSettingsUI) updateSettingsUI();">
+          <svg class="dropdown-item-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span data-i18n="dropdown.settings">Paramètres</span>
+        </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item dropdown-item-danger" onclick="document.getElementById('profile-dropdown-menu').classList.remove('visible'); if(window.signOutUser) signOutUser();">
+          <svg class="dropdown-item-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span data-i18n="dropdown.signout">Se déconnecter</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bouton connexion (visible seulement si non connecté) -->
+    <div class="topbar-logged-out" id="topbar-logged-out">
+      <button class="topbar-settings-btn" onclick="openSettings()" title="Paramètres">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button class="google-signin-topbar-btn" onclick="(window.signInWithGoogle||function(){setTimeout(()=>window.signInWithGoogle&&window.signInWithGoogle(),800)})()">Se connecter</button>
+    </div>
+
+  </header>
+
+  <!-- APP SHELL -->
+  <div class="app-fullscreen">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar glass-panel">
+      <div class="sidebar-header" onclick="showDashboard()">
+        <h1>k-shelf.</h1>
+        <p data-i18n="sidebar.subtitle">ma collection virtuelle</p>
+      </div>
+      <div class="search-box">
+        <input type="text" id="album-search" placeholder="rechercher un album, un artiste..." oninput="handleSearch()"/>
+      </div>
+      <nav class="agency-list" id="sidebar-nav"></nav>
+      <div class="mini-player spotify-feature">
+        <div class="player-body">
+          <div class="player-icon-wrapper">
+            <img id="player-cover" src="" alt="Cover" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:8px;">
+            <span id="player-emoji">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            </span>
+          </div>
+          <div class="player-track-info">
+            <span class="track-status" id="track-status">Lecteur Hors-Ligne</span>
+            <span class="track-title" id="player-title">Aucun morceau sélectionné</span>
+          </div>
+        </div>
+        <div class="player-progress">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="player-controls">
+          <button class="player-btn" id="btn-prev" title="Précédent">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="player-btn play" id="btn-play" title="Lecture">
+            <svg id="play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="pause-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+          </button>
+          <button class="player-btn" id="btn-next" title="Suivant">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
+          </button>
+        </div>
+        <button id="spotify-connect-btn" class="spotify-btn" onclick="loginSpotify()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.52 17.34c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.38-1.32 9.78-.66 13.5 1.62.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.1 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.32-1.32 11.4-1.02 15.9 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.36z"/></svg>
+          <span id="spotify-btn-label">connexion spotify</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content glass-panel" id="main-content"></main>
+
+  </div>
+
+  <!-- PAGE PROFIL (fan card v2) -->
+  <div id="profile-modal-overlay" class="profile-page-overlay">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     K-SHELF — PROFIL V2 (fan card + top 3 + badges)
+     Remplace ENTIÈREMENT le bloc <div id="profile-logged-in" ...>
+     existant dans index.html (l'état non connecté ne change pas).
+     Tous les IDs utilisés par firebase.js / script.js sont conservés.
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="profile-logged-in" class="kprofile-page profile-hidden">
+
+  <button class="profile-page-close kprofile-close" onclick="closeProfileModal()"><span data-i18n="profile.close">✕ Fermer</span></button>
+
+  <!-- Bannière gradient (adaptative au thème) -->
+  <div class="kprofile-banner">
+    <div class="kp2-hero">
+      <div class="kp2-hero-label"><span class="kp2-hero-star">✦</span>&nbsp;&nbsp;profil de fan</div>
+      <div class="kp2-hero-name" id="kp2-hero-name">profil<span class="kp2-hero-dot">.</span></div>
+    </div>
+  </div>
+
+  <div class="kprofile-body">
+
+    <!-- COLONNE GAUCHE -->
+    <div class="kprofile-left">
+
+      <!-- FAN CARD (identité, style photocard) -->
+      <div class="kfc-frame">
+        <div class="kfc-card" id="kfc-card">
+          <div class="kfc-shine"></div>
+          <div class="kfc-top">
+            <span class="kfc-serial">fan card № 001</span>
+            <span class="kfc-holo">★ holo</span>
+          </div>
+
+          <div class="kprofile-avatar-wrap kfc-photo">
+            <div class="profile-avatar-large" id="profile-avatar-large">
+              <span id="profile-large-letter"></span>
+              <img id="profile-large-img" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:16px;">
+            </div>
+            <label class="kprofile-avatar-edit" for="profile-photo-input">✎</label>
+            <input type="file" id="profile-photo-input" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
+          </div>
+
+          <input type="text" id="profile-pseudo-input" class="kprofile-name-input" placeholder="Ton pseudo">
+          <p class="kprofile-email" id="profile-email-display-text"></p>
+          <input type="text" id="profile-email-display" style="display:none">
+
+          <div class="kprofile-fav-row">
+            <div class="kprofile-fav-item">
+              <span class="kprofile-fav-label">Groupe favori</span>
+              <input type="text" id="profile-fav-group" placeholder="NewJeans">
+            </div>
+            <div class="kprofile-fav-item">
+              <span class="kprofile-fav-label">Album favori</span>
+              <input type="text" id="profile-fav-album" placeholder="How Sweet">
+            </div>
+          </div>
+
+          <div class="kfc-footer">
+            <span class="kfc-logo">k-shelf<span class="kfc-dot">.</span></span>
+            <span class="kfc-copy">© 2026 — collector</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="kfc-share-btn" onclick="shareFanCard()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Partager ma fan card
+      </button>
+
+    </div>
+
+    <!-- COLONNE DROITE -->
+    <div class="kprofile-right">
+
+      <!-- Ma collection (rendu existant : renderKprofileStats) -->
+      <div class="kprofile-card">
+        <div class="kprofile-card-header">
+          <svg class="kprofile-card-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span class="kprofile-card-title">Ma collection</span>
+        </div>
+        <div class="kprofile-stats-grid" id="kprofile-stats-grid"></div>
+      </div>
+
+      <!-- NOUVEAU : Top 3 albums -->
+      <div class="kprofile-card">
+        <div class="kprofile-card-header">
+          <svg class="kprofile-card-icon" viewBox="0 0 24 24" width="18" height="18" fill="#fbbf24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span class="kprofile-card-title">Top 3 albums</span>
+          <span class="kprofile-card-count">clique pour choisir</span>
+        </div>
+        <div class="kp2-top3-grid" id="kp2-top3-grid"></div>
+        <div class="kp2-picker" id="kp2-picker" style="display:none">
+          <div class="kp2-picker-head">
+            <span class="kp2-picker-title" id="kp2-picker-title">choisir l'album</span>
+            <button class="kp2-picker-close" onclick="closeTop3Picker()">✕</button>
+          </div>
+          <div class="kp2-picker-grid" id="kp2-picker-grid"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Réseaux sociaux (rangée 2, colonne gauche) -->
+    <div class="kprofile-card kp2-socials-card">
+        <div class="kprofile-card-header">
+          <svg class="kprofile-card-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span class="kprofile-card-title">Réseaux sociaux</span>
+        </div>
+        <div class="kprofile-socials-grid">
+          <div class="kprofile-social-item">
+            <span class="kprofile-social-icon kprofile-icon-yt">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </span>
+            <input type="text" id="profile-youtube" placeholder="@nonowarwood">
+          </div>
+          <div class="kprofile-social-item">
+            <span class="kprofile-social-icon kprofile-icon-tt">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.28 6.28 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.83a8.16 8.16 0 0 0 4.77 1.52V6.9a4.85 4.85 0 0 1-1-.21z"/></svg>
+            </span>
+            <input type="text" id="profile-tiktok" placeholder="@nonowarwood">
+          </div>
+          <div class="kprofile-social-item">
+            <span class="kprofile-social-icon kprofile-icon-pin">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="#E60023"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+            </span>
+            <input type="text" id="profile-pinterest" placeholder="nonowarwood">
+          </div>
+          <div class="kprofile-social-item">
+            <span class="kprofile-social-icon kprofile-icon-kp">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><circle cx="12" cy="12" r="12" fill="#FF5C8A"/><path d="M7 12.5c0-2.76 2.24-5 5-5s5 2.24 5 5-2.24 5-5 5-5-2.24-5-5z" fill="#fff" opacity=".9"/><circle cx="12" cy="12.5" r="2.2" fill="#FF5C8A"/></svg>
+            </span>
+            <input type="text" id="profile-kpopping" placeholder="nonowarwood">
+          </div>
+        </div>
+    </div>
+
+    <!-- Mes biases (rangée 2, colonne droite) -->
+    <div class="kprofile-card kp2-biases-card">
+      <div class="kprofile-card-header">
+        <svg class="kprofile-card-icon" viewBox="0 0 24 24" width="18" height="18" fill="#FF5C8A"><path d="M12 21.593c-.525-.445-4.783-4.144-6.622-5.672-1.839-1.529-3.378-3.538-3.378-6.021 0-2.583 2.099-4.5 4.5-4.5 1.485 0 2.886.699 3.5 1.706.614-1.007 2.015-1.706 3.5-1.706 2.401 0 4.5 1.917 4.5 4.5 0 2.483-1.539 4.492-3.378 6.021-1.839 1.528-6.097 5.227-6.622 5.672z"/></svg>
+        <span class="kprofile-card-title">Mes biases</span>
+        <span class="kprofile-card-count" id="biases-count">0/6</span>
+      </div>
+      <div class="kp2-biases-outer">
+        <div id="biases-grid" class="biases-grid kp2-biases-inner"></div>
+        <div class="kp2-add-tile" id="kp2-add-tile">
+          <button class="kp2-add-plus" onclick="openBiasAdd()">
+            <span class="kp2-plus-sign">+</span>
+            <span class="kp2-plus-label">ajouter un bias</span>
+          </button>
+          <div class="kp2-add-form">
+            <input type="text" id="bias-name-input" placeholder="Nom (ex: Minji)">
+            <input type="text" id="bias-group-input" placeholder="Groupe">
+            <div class="kp2-add-actions">
+              <button class="kp2-add-submit" onclick="addBias()">Ajouter</button>
+              <button class="kp2-add-cancel" onclick="closeBiasAdd()">✕</button>
+            </div>
+            <span class="kp2-add-hint">photo trouvée automatiquement ✨</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badges de collection (pleine largeur) -->
+    <div class="kprofile-card kp2-badges-card">
+      <div class="kprofile-card-header">
+        <svg class="kprofile-card-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+        <span class="kprofile-card-title">Badges de collection</span>
+        <span class="kprofile-card-count" id="kp2-badges-count">0/12</span>
+      </div>
+      <div class="kp2-badges-grid" id="kp2-badges-grid"></div>
+    </div>
+  </div>
+
+  <!-- Bouton sauvegarder flottant -->
+  <div class="kprofile-save-bar">
+    <button class="add-submit-btn" onclick="saveProfile()"><span data-i18n="profile.save">Sauvegarder les modifications</span></button>
+  </div>
+
+</div>
+
+    <!-- État non connecté -->
+    <div id="profile-logged-out" class="profile-page-center">
+      <button class="profile-page-close" onclick="closeProfileModal()">✕</button>
+
+      <div class="signin-card">
+        <div class="signin-logo">k-shelf.</div>
+        <h2 class="signin-title">Bienvenue</h2>
+        <p class="signin-sub">Connecte-toi pour retrouver ta collection synchronisée sur tous tes appareils.</p>
+
+        <button class="signin-google-btn" onclick="(window.signInWithGoogle||function(){setTimeout(()=>window.signInWithGoogle&&window.signInWithGoogle(),800)})()">
+          <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continuer avec Google
+        </button>
+
+        <p class="signin-footer">En te connectant, ta collection est sauvegardée en sécurité et synchronisée automatiquement.</p>
+      </div>
+    </div>
+
+  </div>
+
+    <!-- MODAL AJOUT ALBUM -->
+  <div id="add-modal-overlay" class="add-modal-overlay" onclick="closeAddModal(event)">
+    <div class="add-modal glass-panel">
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+      <h2 class="add-modal-title">Ajouter un album</h2>
+      <div class="add-form">
+        <div class="add-form-group">
+          <label>Titre de l'album *</label>
+          <input type="text" id="add-title" placeholder="NewJeans - How Sweet (Minji ver.)">
+        </div>
+        <div class="add-form-row">
+          <div class="add-form-group">
+            <label>Artiste *</label>
+            <input type="text" id="add-artist" placeholder="NewJeans">
+          </div>
+          <div class="add-form-group">
+            <label>Agency *</label>
+            <select id="add-agency">
+              <option value="HYBE">HYBE</option>
+              <option value="SM Entertainment">SM Entertainment</option>
+              <option value="JYP Entertainment">JYP Entertainment</option>
+              <option value="YG Entertainment">YG Entertainment</option>
+              <option value="The Black Label">The Black Label</option>
+              <option value="Autres / Indés">Autres / Indés</option>
+            </select>
+          </div>
+        </div>
+        <div class="add-form-group">
+          <label>URL de la cover</label>
+          <input type="text" id="add-img" placeholder="https://...">
+        </div>
+        <div class="add-form-group">
+          <label>Année de sortie</label>
+          <input type="number" id="add-year" placeholder="2024" min="1990" max="2030">
+        </div>
+        <div class="add-form-group">
+          <button type="button" class="spotify-autofill-btn" id="spotify-autofill-btn" onclick="autofillFromSpotify()">✦ Récupérer via Spotify</button>
+          <p class="spotify-autofill-status" id="spotify-autofill-status" style="display:none"></p>
+        </div>
+        <div id="add-preview" class="add-preview" style="display:none">
+          <img id="add-preview-img" src="" alt="preview">
+        </div>
+        <div id="add-error" class="add-error" style="display:none"></div>
+        <button class="add-submit-btn" onclick="submitAddAlbum()">Ajouter à ma collection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FICHE ALBUM (injecté dynamiquement) -->
+
+  <!-- MODAL AJOUT PHOTOCARD -->
+  <div id="add-photocard-modal" class="add-modal-overlay" onclick="if(event.target===this)closeAddPhotocard()">
+    <div class="add-modal glass-panel">
+      <button class="modal-close" onclick="closeAddPhotocard()">✕</button>
+      <h2 class="add-modal-title">Ajouter une photocard</h2>
+      <div class="add-form">
+        <div class="add-form-row">
+          <div class="add-form-group">
+            <label>Artiste *</label>
+            <input type="text" id="pc-artist" placeholder="NewJeans">
+          </div>
+          <div class="add-form-group">
+            <label>Membre</label>
+            <input type="text" id="pc-member" placeholder="Minji">
+          </div>
+        </div>
+        <div class="add-form-group">
+          <label>Album d'origine</label>
+          <input type="text" id="pc-album" placeholder="How Sweet">
+        </div>
+        <div class="add-form-group">
+          <label>Image — upload</label>
+          <input type="file" id="pc-img-file" accept="image/*" class="pc-file-input">
+        </div>
+        <div class="add-form-group">
+          <label>ou URL de l'image</label>
+          <input type="text" id="pc-img-url" placeholder="https://...">
+        </div>
+        <img id="pc-img-preview" src="" alt="preview" class="pc-img-preview" style="display:none">
+        <div class="add-form-group">
+          <label>Statut</label>
+          <div class="add-status-toggle">
+            <button class="status-toggle-btn active" id="pc-toggle-owned" onclick="setPcStatus('owned')">● Possédée</button>
+            <button class="status-toggle-btn" id="pc-toggle-favorite" onclick="setPcStatus('favorite')">★ Favori</button>
+          </div>
+        </div>
+        <div id="pc-error" class="add-error" style="display:none"></div>
+        <button class="add-submit-btn" onclick="submitAddPhotocard()">Ajouter au binder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SETTINGS -->
+  <div id="settings-overlay" class="settings-overlay" onclick="if(event.target===this)closeSettings()">
+    <div class="settings-panel glass-panel">
+      <div class="settings-header">
+        <h2 class="settings-title">paramètres</h2>
+        <button class="modal-close" onclick="closeSettings()">✕</button>
+      </div>
+
+      <!-- THÈMES -->
+      <div class="settings-section">
+        <h3 class="settings-section-title">Thème</h3>
+        <div class="theme-cards">
+
+          <div class="theme-card" data-theme="dark" onclick="applyTheme('dark')">
+            <div class="theme-preview theme-preview-dark">
+              <div class="tp-sidebar"></div>
+              <div class="tp-main">
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+              </div>
+            </div>
+            <div class="theme-card-info">
+              <span class="theme-card-name">Dark</span>
+              <span class="theme-card-label">Glassmorphism</span>
+            </div>
+            <div class="theme-check">✓</div>
+          </div>
+
+          <div class="theme-card" data-theme="grid" onclick="applyTheme('grid')">
+            <div class="theme-preview theme-preview-grid">
+              <div class="tp-sidebar"></div>
+              <div class="tp-main tp-grid-lines">
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+              </div>
+            </div>
+            <div class="theme-card-info">
+              <span class="theme-card-name">Grid</span>
+              <span class="theme-card-label">Editorial</span>
+            </div>
+            <div class="theme-check">✓</div>
+          </div>
+
+          <div class="theme-card" data-theme="editorial" onclick="applyTheme('editorial')">
+            <div class="theme-preview theme-preview-editorial">
+              <div class="tp-sidebar"></div>
+              <div class="tp-main">
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+              </div>
+            </div>
+            <div class="theme-card-info">
+              <span class="theme-card-name">Editorial</span>
+              <span class="theme-card-label">Blanc & Noir</span>
+            </div>
+            <div class="theme-check">✓</div>
+          </div>
+
+          <div class="theme-card" data-theme="lemontang" onclick="applyTheme('lemontang')">
+            <div class="theme-preview theme-preview-lemontang">
+              <div class="tp-sidebar"></div>
+              <div class="tp-main">
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+              </div>
+            </div>
+            <div class="theme-card-info">
+              <span class="theme-card-name">LemonTang</span>
+              <span class="theme-card-label">Y2K Frutiger Aero</span>
+            </div>
+            <div class="theme-check">✓</div>
+          </div>
+
+          <div class="theme-card" data-theme="chatgpt" onclick="applyTheme('chatgpt')">
+            <div class="theme-preview theme-preview-chatgpt">
+              <div class="tp-sidebar"></div>
+              <div class="tp-main">
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+              </div>
+            </div>
+            <div class="theme-card-info">
+              <span class="theme-card-name">ChatGPT</span>
+              <span class="theme-card-label">Dark Minimal</span>
+            </div>
+            <div class="theme-check">✓</div>
+          </div>
+
+          <div class="theme-card" data-theme="kpopping" onclick="applyTheme('kpopping')">
+            <div class="theme-preview theme-preview-kpopping">
+              <div class="tp-sidebar"></div>
+              <div class="tp-main">
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+                <div class="tp-card"></div>
+              </div>
+            </div>
+            <div class="theme-card-info">
+              <span class="theme-card-name">Kpopping</span>
+              <span class="theme-card-label">K-pop Coloré</span>
+            </div>
+            <div class="theme-check">✓</div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ANIMATIONS -->
+      <div class="settings-section">
+        <h3 class="settings-section-title">Animations</h3>
+        <label class="toggle-row">
+          <span class="toggle-label">Activer les animations</span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="anim-toggle" checked onchange="applyAnimations(this.checked)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+      </div>
+
+      <!-- IMAGE FOND LEMONTANG -->
+      <div class="settings-section" id="lemontang-bg-section" style="display:none">
+        <h3 class="settings-section-title">Image de fond LemonTang</h3>
+        <input type="file" id="lemontang-bg-file" accept="image/*" class="pc-file-input" onchange="uploadLemonTangBg(this)">
+        <p class="settings-hint">Ajoute une photo du groupe pour l'arrière-plan du thème LemonTang.</p>
+      </div>
+
+      <!-- DONNÉES -->
+      <div class="settings-section">
+        <h3 class="settings-section-title">Données</h3>
+        <button class="reset-collection-btn" onclick="loadDemoCollection(); closeSettings();">
+          ✦ Charger la collection démo
+        </button>
+        <p class="settings-hint">Charge 28 albums de démonstration pour explorer l'interface. Connecte-toi pour ta vraie collection.</p>
+        <button class="reset-collection-btn danger" style="margin-top:14px" onclick="clearCollection()">
+          🗑 Vider ma collection
+        </button>
+        <p class="settings-hint">Supprime définitivement tous tes albums. Cette action est irréversible.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <audio id="local-audio-player"></audio>
+
+  <!-- MODAL PARTAGE & PROFIL PUBLIC -->
+  <div id="share-modal-overlay" class="share-modal-overlay" onclick="if(event.target===this)closeShareModal()">
+    <div class="share-modal">
+      <button class="share-modal-close" onclick="closeShareModal()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div class="share-modal-header">
+        <div class="share-modal-icon">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+        <h2 class="share-modal-title">Partage & profil public</h2>
+        <p class="share-modal-sub">Partage ta collection avec un lien. Tu choisis ce que les visiteurs peuvent voir.</p>
+      </div>
+
+      <label class="share-toggle-row">
+        <span>Activer mon profil public</span>
+        <span class="share-switch">
+          <input type="checkbox" id="share-enabled" onchange="toggleShareEnabled(this.checked)">
+          <span class="share-slider"></span>
+        </span>
+      </label>
+
+      <div id="share-options">
+        <p class="share-options-label">Ce que je partage</p>
+        <label class="share-check"><input type="checkbox" id="share-albums" onchange="updateShareSetting('albums', this.checked)"> <span>Albums</span></label>
+        <label class="share-check"><input type="checkbox" id="share-photocards" onchange="updateShareSetting('photocards', this.checked)"> <span>Photocards</span></label>
+        <label class="share-check"><input type="checkbox" id="share-concerts" onchange="updateShareSetting('concerts', this.checked)"> <span>Concerts</span></label>
+        <label class="share-check"><input type="checkbox" id="share-stats" onchange="updateShareSetting('stats', this.checked)"> <span>Statistiques</span></label>
+      </div>
+
+      <div id="share-link-box">
+        <button class="share-copy-btn" onclick="copyShareLink()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Partager mon profil
+        </button>
+        <p class="share-modal-hint" id="share-link-hint">Connecte-toi pour obtenir ton lien.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL COMMUNAUTÉ (recherche + abonnements/abonnés) -->
+  <div id="community-modal-overlay" class="share-modal-overlay" onclick="if(event.target===this)closeCommunityModal()">
+    <div class="share-modal community-modal">
+      <button class="share-modal-close" onclick="closeCommunityModal()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div class="share-modal-header">
+        <div class="share-modal-icon">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h2 class="share-modal-title">Communauté</h2>
+        <p class="share-modal-sub">Trouve d'autres collectionneurs et suis leurs collections.</p>
+      </div>
+
+      <div class="community-search">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="community-search-input" placeholder="Rechercher un pseudo…" oninput="handleUserSearch(this.value)" autocomplete="off">
+      </div>
+      <div id="community-search-results"></div>
+
+      <div class="community-tabs">
+        <button class="community-tab active" id="tab-following" onclick="switchCommunityTab('following')">Abonnements</button>
+        <button class="community-tab" id="tab-followers" onclick="switchCommunityTab('followers')">Abonnés</button>
+      </div>
+      <div id="community-list"></div>
+    </div>
+  </div>
+
+  <!-- FIREBASE -->
+  <script src="themes.js"></script>
+  <script type="module" src="firebase.js"></script>
+  <script src="script.js"></script>
+  <link rel="stylesheet" href="profile.css">
+  <script src="profile.js"></script>
+  <script src="kprofile-v2.js"></script>
+  <script>
+    // Si l'URL contient ?profile=, afficher le profil public au lieu de l'app
+    if (window.checkForPublicProfile) window.checkForPublicProfile();
+  </script>
+</body>
+</html>
